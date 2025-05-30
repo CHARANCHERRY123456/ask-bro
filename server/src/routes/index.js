@@ -1,6 +1,6 @@
 import express from 'express';
 import metadataRouter from "../features/metadata/metadata.route.js";
-import queryRouter from "../features/query/query.router.js";
+import queryRouter from '../features/queryx/query.route.js'
 
 const router = express.Router();
 

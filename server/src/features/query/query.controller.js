@@ -26,10 +26,10 @@ export async function handleQueryRequest(req, res) {
     
     // Step 1: Generate SQL from question
     console.log("Processing question to generate SQL...");
-    let sqlQuery;
+    let sql;
     try {
-      sqlQuery = await processQuestion(question, metadata, conversationHistory);
-      console.log("Generated SQL query:", sqlQuery);
+      sql = await processQuestion(question, metadata, conversationHistory);
+      console.log("Generated SQL query:", sql);
     } catch (sqlGenerationError) {
       console.error("Error generating SQL:", sqlGenerationError);
       
@@ -47,7 +47,7 @@ export async function handleQueryRequest(req, res) {
     console.log("Executing SQL query...");
     let rows;
     try {
-      rows = await executeSQL(sqlQuery);
+      rows = await executeSQL(sql);
       console.log(`SQL execution results: ${rows.length} rows returned`);
     } catch (executionError) {
       console.error("Error executing SQL query:", executionError);
@@ -57,10 +57,10 @@ export async function handleQueryRequest(req, res) {
       try {
         // Add a retry hint to the question
         const retryQuestion = `${question} (Please generate a simpler query focusing on exact matches only)`;
-        const retrySqlQuery = await processQuestion(retryQuestion, metadata, conversationHistory);
-        console.log("Retry generated SQL query:", retrySqlQuery);
-        rows = await executeSQL(retrySqlQuery);
-        sqlQuery = retrySqlQuery; // Update the SQL query to the successful one
+        const retrysql = await processQuestion(retryQuestion, metadata, conversationHistory);
+        console.log("Retry generated SQL query:", retrysql);
+        rows = await executeSQL(retrysql);
+        sql = retrysql; // Update the SQL query to the successful one
         console.log(`SQL execution results after retry: ${rows.length} rows returned`);
       } catch (retryError) {
         console.error("Error on retry execution:", retryError);
@@ -69,7 +69,7 @@ export async function handleQueryRequest(req, res) {
         return res.status(200).json({ 
           error: 'Failed to execute SQL query',
           content: "I understand what you're asking, but I'm having trouble retrieving that specific information. Could you try asking about a different aspect or provide more details?",
-          sql: sqlQuery,
+          sql: sql,
           data: null,
           visualizations: null
         });
@@ -78,7 +78,7 @@ export async function handleQueryRequest(req, res) {
 
     // Step 3: Generate natural language + visualizations JSON from results
     console.log("Generating answer JSON from results...");
-    const answerJson = await generateAnswerFromResults(sqlQuery, rows, question);
+    const answerJson = await generateAnswerFromResults(sql, rows, question);
     console.log("Answer JSON generated successfully");
 
     // Log the successful query
@@ -86,7 +86,7 @@ export async function handleQueryRequest(req, res) {
       await logQuery({
         conversationId,
         question,
-        sqlQuery,
+        sql,
         result: rows.length > 0 ? 'success' : 'no_data',
         timestamp: new Date()
       });
@@ -96,7 +96,7 @@ export async function handleQueryRequest(req, res) {
     console.log("Sending response to frontend...");
     res.json({
       ...answerJson,
-      sql: sqlQuery,
+      sql: sql,
       error: null
     });
 

@@ -29,7 +29,7 @@ export async function logQuery(logData) {
     `, [
       logData.conversationId,
       logData.question,
-      logData.sqlQuery,
+      logData.sql,
       logData.result,
       logData.timestamp
     ]);

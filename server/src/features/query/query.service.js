@@ -33,19 +33,19 @@ export async function processQuestion(question, metadata, conversationHistory = 
 
   console.log('Generated prompt for Gemini (length):', prompt.length);
 
-  let sqlQuery = '';
+  let sql = '';
   try {
-    sqlQuery = await askGemini(prompt);
-    sqlQuery = sqlQuery.replace(/``````/g, '').trim();
-    console.log('Received SQL query from Gemini:', sqlQuery);
+    sql = await askGemini(prompt);
+    sql = sql.replace(/``````/g, '').trim();
+    console.log('Received SQL query from Gemini:', sql);
     
     // If the query is empty or doesn't start with expected SQL keywords, generate a default query
-    if (!sqlQuery || !/^(SELECT|WITH|EXPLAIN)/i.test(sqlQuery)) {
+    if (!sql || !/^(SELECT|WITH|EXPLAIN)/i.test(sql)) {
       console.log('Invalid SQL generated, using default query');
-      sqlQuery = generateDefaultQuery(question);
+      sql = generateDefaultQuery(question);
     }
     
-    return sqlQuery;
+    return sql;
   } catch (e) {
     console.error('Error while getting SQL from Gemini:', e.message);
     return generateDefaultQuery(question);
@@ -111,14 +111,14 @@ function generateDefaultQuery(question) {
 
 
 
-export async function executeSQL(sqlQuery) {
-  console.log('executeSQL called with query length:', sqlQuery.length);
+export async function executeSQL(sql) {
+  console.log('executeSQL called with query length:', sql.length);
 
   try {
     // Set a longer statement timeout for complex queries (5 minutes)
     await pool.query('SET statement_timeout = 300000');
     
-    const result = await pool.query(sqlQuery);
+    const result = await pool.query(sql);
     console.log('Query executed successfully. Rows returned:', result.rows.length);
     
     // Reset statement timeout to default
@@ -139,8 +139,8 @@ export async function executeSQL(sqlQuery) {
   }
 }
 
-export async function generateAnswerFromResults(sqlQuery, rows, question) {
-  console.log('generateAnswerFromResults called with:', { sqlQueryLength: sqlQuery.length, rowCount: rows.length, question });
+export async function generateAnswerFromResults(sql, rows, question) {
+  console.log('generateAnswerFromResults called with:', { sqlLength: sql.length, rowCount: rows.length, question });
 
   // Prepare a summary of the data for large result sets
   let dataSummary = '';
