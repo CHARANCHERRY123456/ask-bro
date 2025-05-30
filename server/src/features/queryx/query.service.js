@@ -1,5 +1,17 @@
 import { askGemini } from '../../utils/geminiClient.js';
 
+async function getsqlFromGemini(prompt) {
+  const geminiReply = await askGemini(prompt);
+
+  const cleanedQuery = geminiReply
+    .replace(/^```sql\s*/i, '')
+    .replace(/```$/, '')
+    .trim();
+
+  return cleanedQuery;
+}
+
+
 export async function processQuestion(question, metadata) {
   const prompt = `
     You are a SQL expert and assistant helping to generate SQL queries for a complex, messy database with the following challenges:
@@ -30,8 +42,17 @@ export async function processQuestion(question, metadata) {
 
   let geminiReply = '';
   try {
-    geminiReply = await askGemini(prompt);
-    console.log("is the gemini reply query",geminiReply);
+    // geminiReply = await getsqlFromGemini(prompt);
+    geminiReply = `SELECT
+  CASE
+    WHEN COUNT(*) > 0
+    THEN TRUE
+    ELSE FALSE
+  END
+FROM table_a
+WHERE
+  UPPER(col2) LIKE UPPER('%charan%')`
+    console.log("is the gemini reply query", geminiReply);
     
   } catch (error) {
     console.error('Error calling Gemini:', error);
@@ -41,19 +62,8 @@ export async function processQuestion(question, metadata) {
   if (!geminiReply || geminiReply.trim() === '') {
     throw new Error('Gemini returned an empty SQL response. Please try rephrasing the question.');
   }
-
-  // Clean response
-  const sqlQuery = geminiReply.trim();
-
-  // Basic validation: SQL should start with common keywords
-  const validStart = ['SELECT', 'WITH', 'SHOW', 'EXPLAIN', 'INSERT', 'UPDATE', 'DELETE'].some(keyword =>
-    sqlQuery.toUpperCase().startsWith(keyword)
-  );
-
-  if (!validStart) {
-    throw new Error('Generated SQL query seems invalid: ' + sqlQuery);
-  }
-
-  return sqlQuery;
+  return geminiReply;
 }
+
+
 
